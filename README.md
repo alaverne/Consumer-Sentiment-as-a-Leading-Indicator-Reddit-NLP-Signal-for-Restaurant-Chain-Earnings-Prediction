@@ -1,0 +1,1 @@
+# Consumer-Sentiment-as-a-Leading-Indicator-Reddit-NLP-Signal-for-Restaurant-Chain-Earnings-Prediction
