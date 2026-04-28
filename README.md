@@ -39,14 +39,14 @@ Demo mode runs on synthetic data so you can test the pipeline without scraping a
 
 ARCHITECTURE
 
-scraper.py — pulls posts from the Arctic Shift API
-feature_engineering.py — VADER scoring and signal construction
-models.py — trains and evaluates all four classifiers
-backtest.py — P&L engine with Sharpe, drawdown, and per-ticker stats
-visualizations.py — 8 charts
-main.py — runs everything end to end
-data_generator.py — synthetic data for demo mode
-archive/ — original exploratory notebook
+1. scraper.py — pulls posts from the Arctic Shift API
+2. feature_engineering.py — VADER scoring and signal construction
+3. models.py — trains and evaluates all four classifiers
+4. backtest.py — P&L engine with Sharpe, drawdown, and per-ticker stats
+5. visualizations.py — 8 charts
+6. main.py — runs everything end to end
+7. data_generator.py — synthetic data for demo mode
+8. archive/ — original exploratory notebook
 
 
 COMPANY SELECTION
@@ -62,6 +62,7 @@ COMPANY SELECTION
 
 
 KEY FINDINGS
+
 The backtest using real price data produced 60 trades (53 long, 7 short) over the test period. The selectivity is intentional — the model only takes a position when conviction is high. Win rate was 56.7%, Sharpe ratio 2.36, and maximum drawdown -0.8%. A fund with higher conviction in the signal after more data could size more aggressively.
 
 ![Equity Curve](results/figures/chart6_equity_curve.png)
@@ -90,7 +91,9 @@ The data is split at January 2024 — everything before that trains the models, 
 7. Models
 Four classifiers were tested alongside the original logistic regression, which uses only pre30_sent as a baseline. The enhanced logistic regression adds the 7-day window and sentiment shift features with stronger regularization. Random Forest and Gradient Boosting test whether non-linear interactions between features add predictive power — with 3 features and ~56 training events there isn't a lot for these models to work with, but the comparison is useful for checking whether a non-linear relationship exists. A Ridge regression predicting EPS surprise magnitude is included as exploratory analysis only.
 
+
 RESULTS
+
 1. The pipeline scraped 24,677 posts across 7 tickers, filtered to 19,401 after removing low-signal posts, covering 119 earnings events.
 2. The temporal split produced 56 training events and 63 test events with 18 misses in the test set.
 3. In 3-fold cross-validation on the training set, Random Forest achieved the highest mean AUC at 0.731, followed by the original logistic regression at 0.719, Gradient Boosting at 0.654, and the enhanced logistic regression at 0.610.
