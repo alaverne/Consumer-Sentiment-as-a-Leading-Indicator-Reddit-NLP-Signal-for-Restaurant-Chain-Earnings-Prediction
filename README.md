@@ -26,10 +26,10 @@ git clone https://github.com/alaverne/Consumer-Sentiment-as-a-Leading-Indicator-
 cd Consumer-Sentiment-as-a-Leading-Indicator-Reddit-NLP-Signal-for-Restaurant-Chain-Earnings-Prediction
 pip install -r requirements.txt
 
-# Demo mode (synthetic data, no API calls needed):
+Demo mode (synthetic data, no API calls needed):
 python main.py
 
-# Live mode (real Reddit scrape + yfinance earnings):
+Live mode (real Reddit scrape + yfinance earnings):
 python main.py --mode live
 
 Demo mode runs on synthetic data so you can test the pipeline without scraping anything. Live mode pulls real Reddit posts and earnings data — the scraping takes about 20-30 minutes.
@@ -90,7 +90,7 @@ The data is split at January 2024 — everything before that trains the models, 
 7. Models
 Four classifiers were tested alongside the original logistic regression, which uses only pre30_sent as a baseline. The enhanced logistic regression adds the 7-day window and sentiment shift features with stronger regularization. Random Forest and Gradient Boosting test whether non-linear interactions between features add predictive power — with 3 features and ~56 training events there isn't a lot for these models to work with, but the comparison is useful for checking whether a non-linear relationship exists. A Ridge regression predicting EPS surprise magnitude is included as exploratory analysis only.
 
-Results
+RESULTS
 1. The pipeline scraped 24,677 posts across 7 tickers, filtered to 19,401 after removing low-signal posts, covering 119 earnings events.
 2. The temporal split produced 56 training events and 63 test events with 18 misses in the test set.
 3. In 3-fold cross-validation on the training set, Random Forest achieved the highest mean AUC at 0.731, followed by the original logistic regression at 0.719, Gradient Boosting at 0.654, and the enhanced logistic regression at 0.610.
