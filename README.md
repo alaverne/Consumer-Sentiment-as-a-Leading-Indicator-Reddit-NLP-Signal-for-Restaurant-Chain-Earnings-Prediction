@@ -136,7 +136,8 @@ Next Steps
 6. Expand the ticker universe to 15-20 names to get closer to the 30+ miss threshold needed for robust classification metrics
 
 
-Requirements
+REQUIREMENTS
+
 pandas>=2.0  numpy>=1.24  scikit-learn>=1.3
 matplotlib>=3.7  seaborn>=0.12  vaderSentiment>=3.3
 yfinance>=0.2  requests>=2.28  lxml>=4.9
