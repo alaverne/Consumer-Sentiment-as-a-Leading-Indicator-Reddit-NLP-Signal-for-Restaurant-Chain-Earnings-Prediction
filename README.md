@@ -126,7 +126,7 @@ Only post titles and body text were scored. Reddit comments often contain more d
 The Ridge regression is trained on a pooled dataset across all seven tickers. A large beat for WEN might be a 3% EPS surprise while a large beat for SHAK might be 20%. It is kept as exploratory analysis only.
 
 
-Next Steps
+NEXT STEPS
 
 1. Systematically test longer lookback windows (T-45, T-60) to see whether the signal strengthens further from earnings
 2. Extend scoring to Reddit comments, which often contain more detailed feedback than post titles
