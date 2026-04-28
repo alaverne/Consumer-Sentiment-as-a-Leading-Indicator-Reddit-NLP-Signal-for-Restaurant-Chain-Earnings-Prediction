@@ -1,4 +1,4 @@
-CONSUMER SENTIMENT AS A LEADING INDICATOR: REDDIT NLP SIGNAL FOR RESTAURANT CHAIN EARNINGS PREDICTION
+CONSUMER SENTIMENT AS A LEADING INDICATOR: REDDIT NLP SIGNAL FOR RESTAURANT CHAIN PERFORMANCE
 
 An end-to-end alternative data pipeline for monitoring consumer sentiment inflection points in restaurant chain subreddits. Scrapes Reddit posts, scores sentiment using VADER NLP, and tests whether shifts in consumer sentiment precede changes in financial results. The original exploratory notebook is preserved in archive/.
 
