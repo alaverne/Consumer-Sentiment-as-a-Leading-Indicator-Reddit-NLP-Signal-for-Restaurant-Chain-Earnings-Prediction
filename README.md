@@ -1,122 +1,114 @@
 Consumer Sentiment as a Leading Indicator: Reddit NLP Signal for Restaurant Chain Earnings Prediction
+An end-to-end alternative data pipeline for monitoring consumer sentiment inflection points in restaurant chain subreddits. Scrapes Reddit posts, scores sentiment using VADER NLP, and tests whether shifts in consumer sentiment precede changes in financial results. The original exploratory notebook is preserved in archive/.
 
-OVERVIEW
+Signal Application
+The primary use case is continuous monitoring for sentiment inflection points throughout a holding period. A sustained shift in consumer sentiment may precede changes in reported sales numbers, creating an opportunity to identify thesis changes before they appear in financial results. The earnings backtest measures signal quality — earnings outcomes provide objective ground truth labels — but the signal is relevant throughout the holding period, not just at earnings catalysts. For a quant or event-driven fund, the same signal could form a composite factor tested against forward returns at any point in time — not just around earnings events.
 
-This project investigates whether Reddit consumer sentiment can serve as a leading indicator for earnings surprises across major restaurant chain stocks. Using historical posts scraped from company-specific subreddits, I built an end-to-end alternative data pipeline that scores sentiment using VADER NLP, constructs a weekly time series signal, and backtests its predictive accuracy against quarterly earnings outcomes.
+What's New in This Version
 
-
-HYPOTHESIS
-
-Consumer discussions on Reddit reflect real-time shifts in company perception that manifest in same-store sales performance and ultimately drive earnings outcomes. If sentiment deteriorates meaningfully in the 30 days before an earnings announcement, it may signal an increased probability of a miss.
-
-
-PIPELINE
-
-1. I scraped 12,092 historical Reddit posts across 5 subreddits using the Arctic Shift API
-2. Pulled stock prices and earnings dates via yfinance
-3. Scored sentiment using VADER
-4. Aggregated the data into a weekly time series
-5. Normalized by ticker using z-scores
-6. I fed the pre-earnings sentiment signal into a logistic regression model
+Expanded from 5 to 7 tickers (added WING and JACK)
+Extended date range through April 2026 (~50 to 119 earnings events)
+Added a 7-day pre-earnings window alongside the original 30-day
+Returns-based backtest using real price data
+Probability and sentiment threshold sweep functions
+Temporal train/test split replacing random cross-validation
+Random Forest and Gradient Boosting added alongside the original logistic regression
+Reorganized from a single notebook into separate modules
 
 
+Quickstart
 
-COMPANY SELECTION: CMG, MCD, DPZ, WEN, SHAK
+git clone https://github.com/alaverne/Consumer-Sentiment-as-a-Leading-Indicator-Reddit-NLP-Signal-for-Restaurant-Chain-Earnings-Prediction
+cd Consumer-Sentiment-as-a-Leading-Indicator-Reddit-NLP-Signal-for-Restaurant-Chain-Earnings-Prediction
+pip install -r requirements.txt
 
-1. My original analysis covered SBUX, NKE, and CMG. I ended up dropping and replacing NKE and SBUX.
-2. The r/starbucks thread is full of employees talking about working conditions and unionization, rather than customer experience sentiment. The model actually confirmed this, as SBUX had high positive sentiment before misses, which is the opposite of what should happen if the signal worked.
-3. In the r/Nike thread, there were a bunch of posts where people were reselling things or talking about new releases. It wasn't really representative of Nike's broader consumer base. There was also only one earnings miss in the whole span of the data, so I couldn't really train a meaningful classifier with that.
-4. After removing those two companies, I added a few other restaurant chains where the subreddits were more clearly customer-focused (people complaining about portion sizes, wait times, new menu items, etc.), as these are better indicators of sales.
+# Demo mode (synthetic data, no API calls needed):
+python main.py
 
+# Live mode (real Reddit scrape + yfinance earnings):
+python main.py --mode live
 
+Demo mode runs on synthetic data so you can test the pipeline without scraping anything. Live mode pulls real Reddit posts and earnings data — the scraping takes about 20-30 minutes.
 
-METHODOLOGY
+Architecture
 
-1. I used VADER for sentiment scoring after testing FinBERT first. Despite FinBERT being finance-specific, VADER performed better on this dataset — Reddit’s informal language aligns better with VADER’s social media training.
-2. Weighted posts by log engagement score, so viral posts carry more signal than obscure ones.
-3. Normalized sentiment by ticker using z-scores rather than min-max scaling. Each subreddit has a different baseline tone, so raw scores aren’t comparable across companies. Z-scoring makes a -1.5 score mean the same thing for every ticker.
-4. I used a 30-day pre-earnings window, which is long enough to capture a trend, but short enough to stay relevant to the quarter.
-5. I applied class_weight=‘balanced’ to the logistic regression because 82% of events were beats. Without it the model just predicts a beat every time.
-
-
-    
-SIGNAL CONSTRUCTION
-1. Aggregated to weekly sentiment scores by ticker
-2. Applied a 4-week rolling average to smooth noise from individual viral posts
-3. I decided to use z-scores by ticker so that scores are comparable across companies, because the threads for each company had varying baseline tones, so it wasn't apples to apples. A -1.5 z-score means the same thing for both after normalizing. I considered min-max scaling first, but z-score felt more appropriate because I didn't want one extreme data point to become the floor or ceiling and distort everything. Z-scoring is more stable for detecting deviations from a company's normal baseline.
-4. Calculated average z-scored sentiment in the 30-day window preceding each earnings announcement
-
+scraper.py — pulls posts from the Arctic Shift API
+feature_engineering.py — VADER scoring and signal construction
+models.py — trains and evaluates all four classifiers
+backtest.py — P&L engine with Sharpe, drawdown, and per-ticker stats
+visualizations.py — 8 charts
+main.py — runs everything end to end
+data_generator.py — synthetic data for demo mode
+archive/ — original exploratory notebook
 
 
-MODEL
-1. Supervised binary classification using logistic regression
-2. Predicts earnings beat/miss outcome from pre-earnings sentiment score
-3. Applied class_weight='balanced' to address 82/18 beat/miss class imbalance. I priorited recall on misses over raw accuracy.
-4. To avoid overfitting, I used 5-fold cross-validation.
+Ticker Universe & Selection Rationale
+My original analysis covered SBUX, NKE, and CMG. I ended up dropping and replacing NKE and SBUX.
+The r/starbucks thread is full of employees talking about working conditions and unionization, rather than customer experience sentiment. The model actually confirmed this, as SBUX had high positive sentiment before misses, which is the opposite of what should happen if the signal worked.
+In the r/Nike thread, there were a bunch of posts where people were reselling things or talking about new releases. It wasn't really representative of Nike's broader consumer base. There was also only one earnings miss in the whole span of the data, so I couldn't really train a meaningful classifier with that.
+After removing those two companies, I added a few other restaurant chains where the subreddits were more clearly customer-focused (people complaining about portion sizes, wait times, new menu items, etc.), as these are better indicators of sales.
+For this version I also added WING and JACK — both single-brand, customer-focused communities where posts skew toward price and portion complaints, similar to the original five.
+
+![Sentiment Timeseries](results/figures/chart1_sentiment_timeseries.png)
 
 
 
+Key Findings
+The backtest using real price data produced 60 trades (53 long, 7 short) over the test period. The selectivity is intentional — the model only takes a position when conviction is high. Win rate was 56.7%, Sharpe ratio 2.36, and maximum drawdown -0.8%. A fund with higher conviction in the signal after more data could size more aggressively.
 
-RESULTS
-1. 12,092 posts scraped across 5 tickers (January 2022 — June 2024)
-2. 50 earnings events, 10 per ticker
-3. Beat rate: 82%
-4. Cross-validated accuracy: 78% (+/- 7.5%)
-5. Baseline: 82%
-6. Miss recall: 78% — correctly identified 7 of 9 earnings misses
-7. Beat precision: 0.94 — (when the model predicts a beat it’s accurate 94% of the time)
-8. Miss mean pre-earnings sentiment: -0.83 vs Beat mean: 0.02 — meaningful separation between the two distributions
+![Equity Curve](results/figures/chart6_equity_curve.png)
 
 
+Methodology
+Sentiment Scoring
+I used VADER for sentiment scoring after testing FinBERT first. Despite FinBERT being finance-specific, VADER performed better on this dataset — Reddit's informal language aligns better with VADER's social media training.
+Signal Construction: Two Pre-Earnings Windows
+The original pipeline used a single 30-day window — long enough to capture a trend, short enough to stay relevant to the quarter. The enhanced pipeline adds a 7-day window to measure whether recent sentiment shifts add information beyond the 30-day average. A third feature, sentiment_shift_30_7, captures the difference between the two windows — measuring whether sentiment is accelerating or decelerating heading into the announcement.
+Engagement Weighting
+Posts are weighted by per-ticker percentile rank rather than raw upvote counts. A post in the top 10% of engagement for r/ShakeShack gets similar weight to a top 10% post on r/McDonalds — regardless of the raw upvote difference between those communities. Using absolute counts would systematically overweight larger communities and underweight smaller ones like WING and JACK.
+Normalization
+Z-scored by ticker so scores are comparable across brands. r/chipotle has a different baseline tone than r/Wendys — a −1.5 z-score means the same thing for both after normalizing. Min-max scaling was tested first but was too sensitive to outliers. Z-scoring is more stable for detecting deviations from a company's own baseline.
+Class Imbalance
+The majority of earnings events in the dataset are beats. Without class_weight='balanced', the logistic regression learns to predict beat every time and achieves high accuracy while catching zero misses. Balancing the classes forces the model to actually learn what a miss looks like.
+Train / Test Split
+The data is split at January 2024 — everything before that trains the models, everything after is held out for testing. That gives 56 training events and 63 test events with 18 misses. I used 3-fold TimeSeriesSplit CV rather than the standard 5-fold because with ~56 training events, 5-fold produced NaN AUC scores — the folds were too small to have enough misses to compute AUC reliably.
+Models
+Four classifiers were tested alongside the original logistic regression, which uses only pre30_sent as a baseline. The enhanced logistic regression adds the 7-day window and sentiment shift features with stronger regularization. Random Forest and Gradient Boosting test whether non-linear interactions between features add predictive power — with 3 features and ~56 training events there isn't a lot for these models to work with, but the comparison is useful for checking whether a non-linear relationship exists. A Ridge regression predicting EPS surprise magnitude is included as exploratory analysis only.
+
+Results
+The pipeline scraped 24,677 posts across 7 tickers, filtered to 19,401 after removing low-signal posts, covering 119 earnings events. The temporal split produced 56 training events and 63 test events with 18 misses in the test set.
+In 3-fold cross-validation on the training set, Random Forest achieved the highest mean AUC at 0.731, followed by the original logistic regression at 0.719, Gradient Boosting at 0.654, and the enhanced logistic regression at 0.610. Out-of-sample, the enhanced logistic regression achieved the highest AUC at 0.556 with 63.5% accuracy, the original logistic regression 0.553 and 65.1%, Gradient Boosting 0.482 and 69.8%, and Random Forest 0.442 and 63.5%.
+The magnitude regression produced an OOS MAE of 14.795% and R² of −0.299, confirming it is exploratory only. The 30-day window showed a correlation of 0.132 with earnings outcomes (n=114) and the 7-day window 0.110 (n=76).
+
+![Model Comparison](results/figures/chart4_model_comparison.png)
+
+The returns-based backtest using Gradient Boosting with real price data produced 60 trades (53 long, 7 short), a win rate of 56.7%, annualized return of 1.4%, Sharpe ratio of 2.36, and maximum drawdown of -0.8%.
+
+Limitations
+Sample size and the 30+ benchmark:
+The current OOS test set has 45 beats and 18 misses. The standard threshold for robust binary classification metrics is 30+ examples of each class, so results should be interpreted as exploratory rather than confirmatory. Expanding the ticker universe is the primary path to closing this gap.
+yfinance earnings date accuracy:
+Earnings dates sourced from yfinance can occasionally be off by 1–2 days. A one-day error shifts all window boundaries and could accidentally include post-announcement posts in the pre-earnings features — a subtle but material form of look-ahead bias. In production, earnings dates should be cross-referenced against a second source before computing any features.
+VADER sentiment limitations:
+VADER scores words independently, which means it misses sarcasm and negation modifiers. A context-aware model like fine-tuned RoBERTa would handle these cases better, but VADER outperformed FinBERT on this dataset empirically — likely because the informal language advantage outweighs the context limitation for Reddit text.
+Engagement is community-relative throughout:
+Both the post filter and engagement weighting use per-ticker relative engagement rather than absolute thresholds. The 75th percentile threshold is a reasonable starting point but was not empirically tuned and could be optimized with more data.
+Comment-level sentiment not captured:
+Only post titles and body text were scored. Reddit comments often contain more detailed consumer feedback than the post itself and may represent additional signal worth exploring.
+EPS surprise magnitude varies significantly by ticker:
+The Ridge regression is trained on a pooled dataset across all seven tickers, which is a limitation — a large beat for WEN might be a 3% EPS surprise while a large beat for SHAK might be 20%. It is kept as exploratory analysis only.
+
+Next Steps
+
+Systematically test longer lookback windows (T-45, T-60) to see whether the signal strengthens further from earnings
+Extend scoring to Reddit comments, which often contain more detailed feedback than post titles
+Test ticker-specific models
+Cross-reference yfinance earnings dates against the Nasdaq calendar to eliminate 1-2 day date errors
+Combine Reddit sentiment with credit card transaction data as a behavioral validator
+Expand the ticker universe to 15-20 names to get closer to the 30+ miss threshold needed for robust classification metrics
 
 
-DATA VISUALIZATIONS
-
-Chart 1: Reddit sentiment z-score time series vs earnings outcomes for all 5 tickers — green solid lines = beat, red dashed lines = miss
-
-![Sentiment Time Series](chart1_sentiment_timeseries.png)
-
-
-Chart 2: Distribution of 30-day pre-earnings sentiment scores — beats vs misses
-
-![Sentiment Distribution](chart2_sentiment_distribution.png)
-
-
-Chart 3: Confusion matrix — balanced logistic regression predictions
-
-![Confusion Matrix](chart3_confusion_matrix.png)
-
-
-
-INVESTMENT CONCLUSION
-
-Reddit consumer sentiment contains a detectable signal ahead of earnings surprises for restaurant chain stocks. Before earnings misses, pre-earnings sentiment averaged -0.83 standard deviations below each company’s own baseline. Before beats, it averaged just +0.02 — essentially neutral. This implies that positive sentiment doesn’t reliably predict a beat, but unusually negative sentiment does appear to precede misses. The signal serves as a warning indicator, rather than a two-sided predictor. Most importantly, this deterioration was detectable 30 days before earnings announcements, suggesting Reddit captures shifts in consumer perception before they show up in reported results.
-
-The model correctly identified 7 of 9 earnings misses using only sentiment, achieving 78% miss recall after accounting for class imbalance. In a trading context, catching misses matters more than raw accuracy, so optimizing for recall over accuracy was the right tradeoff here.
-
-One of the more interesting findings was that subreddit composition matters as much as subreddit size. r/starbucks failed as a signal source because its subreddit is dominated by employees discussing labor conditions rather than customers discussing store experience. The best alternative data subreddits are ones where the dominant voice is a customer, as their experience feedback is reflected in future sales.
-
-In practice, I would use this signal as a pre-earnings screening tool — flagging names where sentiment has dropped more than 1.5 standard deviations below their own baseline in the 30-day window before earnings as elevated miss risk candidates. This threshold would need to be backtested to find the optimal value, but -1.5 is a reasonable starting point given that the average pre-earnings sentiment before observed misses was -0.83 standard deviations.
-
-9 misses across 50 earnings events constitutes exploratory research for a signal. The framework is sound but the data needs to scale. A production version would require 3-5 years of data across a broader universe of tickers and backtesting of the 1.5 standard deviation threshold against alternatives. Additionally, I only scored post titles and body text — comment-level sentiment was not captured. Reddit comments often contain more detailed consumer feedback than the post itself, and may represent an additional signal worth exploring.
-
-
-
-LIMITATIONS
-
-1. Sample size of 50 earnings events and 9 misses is exploratory rather than production-grade
-2. A robust signal would require 3-5 years of data across a broader ticker universe
-3. Subreddit engagement varies significantly by company — SHAK has far fewer posts than CMG or MCD
-4. Reddit users are not representative of the full consumer population
-5. The optimal sentiment threshold for flagging increased miss risk would need to be backtested across multiple threshold values. I assumed a 1.5 standard deviation as a starting point.
-6. Only post titles and body text were scored, comment-level sentiment is not captured.
-
-
-
-NEXT STEPS
-
-1. Expand ticker list and date ranges to increase sample size
-2. Combine Reddit sentiment with transaction-level alternative data (maybe credit card or foot traffic data) for a multi-signal model.
-3. I could test the signal decay at varying pre-earnings windows
-4. Explore ticker-specific models rather than a pooled cross-ticker approach
-5. Test additional threshold values (1.0, 1.5, 2.0 standard deviations) to optimize the miss-flagging benchmark.
+Requirements
+pandas>=2.0  numpy>=1.24  scikit-learn>=1.3
+matplotlib>=3.7  seaborn>=0.12  vaderSentiment>=3.3
+yfinance>=0.2  requests>=2.28  lxml>=4.9
