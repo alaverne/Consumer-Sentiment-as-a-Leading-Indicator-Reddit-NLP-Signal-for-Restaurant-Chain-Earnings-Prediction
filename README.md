@@ -107,23 +107,17 @@ RESULTS
 
 LIMITATIONS
 
-1. Sample size and the 30+ benchmark:
-The current OOS test set has 45 beats and 18 misses. The standard threshold for robust binary classification metrics is 30+ examples of each class, so results should be interpreted as exploratory rather than confirmatory. Expanding the ticker universe is the primary path to closing this gap.
+1. The current OOS test set has 45 beats and 18 misses. The standard threshold for robust binary classification metrics is 30+ examples of each class, so results should be interpreted as exploratory rather than confirmatory. Expanding the ticker universe is the primary path to closing this gap.
 
-2. yfinance earnings date accuracy:
-Earnings dates sourced from yfinance can occasionally be off by 1–2 days. A one-day error shifts all window boundaries and could accidentally include post-announcement posts in the pre-earnings features — a subtle but material form of look-ahead bias. In production, earnings dates should be cross-referenced against a second source before computing any features.
+2. Earnings dates sourced from yfinance can occasionally be off by 1–2 days. A one-day error shifts all window boundaries and could accidentally include post-announcement posts in the pre-earnings features — a subtle but material form of look-ahead bias. In production, earnings dates should be cross-referenced against a second source before computing any features.
 
-3. VADER sentiment limitations:
-VADER scores words independently, which means it misses sarcasm and negation modifiers. A context-aware model like fine-tuned RoBERTa would handle these cases better, but VADER outperformed FinBERT on this dataset empirically — likely because the informal language advantage outweighs the context limitation for Reddit text.
+3. VADER scores words independently, which means it misses sarcasm and negation modifiers. A context-aware model like fine-tuned RoBERTa would handle these cases better, but VADER outperformed FinBERT on this dataset empirically — likely because the informal language advantage outweighs the context limitation for Reddit text.
 
-4. Engagement is community-relative throughout:
-Both the post filter and engagement weighting use per-ticker relative engagement rather than absolute thresholds. The 75th percentile threshold is a reasonable starting point but was not empirically tuned and could be optimized with more data.
+4. Both the post filter and engagement weighting use per-ticker relative engagement rather than absolute thresholds. The 75th percentile threshold is a reasonable starting point but was not empirically tuned and could be optimized with more data.
 
-5. Comment-level sentiment not captured:
-Only post titles and body text were scored. Reddit comments often contain more detailed consumer feedback than the post itself and may represent additional signal worth exploring.
+5. Only post titles and body text were scored. Reddit comments often contain more detailed consumer feedback than the post itself and may represent additional signal worth exploring.
 
-6. EPS surprise magnitude varies significantly by ticker:
-The Ridge regression is trained on a pooled dataset across all seven tickers. A large beat for WEN might be a 3% EPS surprise while a large beat for SHAK might be 20%. It is kept as exploratory analysis only.
+6. The Ridge regression is trained on a pooled dataset across all seven tickers. A large beat for WEN might be a 3% EPS surprise while a large beat for SHAK might be 20%. It is kept as exploratory analysis only.
 
 
 NEXT STEPS
